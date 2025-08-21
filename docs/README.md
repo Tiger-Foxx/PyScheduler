@@ -20,14 +20,14 @@ PyScheduler revolutionizes task scheduling in Python. **3 lines are enough** to 
 ## 🚀 **Installation**
 
 ```bash
-pip install pyscheduler[full]
+pip install pyscheduler-fox[full]
 ```
 
 <details>
 <summary>Minimal installation (without optional dependencies)</summary>
 
 ```bash
-pip install pyscheduler
+pip install pyscheduler-fox
 ```
 </details>
 

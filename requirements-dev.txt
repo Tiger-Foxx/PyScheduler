@@ -1,5 +1,5 @@
 # PyScheduler - Development Dependencies
-# Install with: pip install pyscheduler[dev]
+# Install with: pip install pyscheduler-fox[dev]
 
 # Testing
 pytest>=7.0.0

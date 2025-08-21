@@ -4,14 +4,14 @@
 
 ### Standard Installation (Recommended)
 ```bash
-pip install pyscheduler[full]
+pip install pyscheduler-fox[full]
 ```
 
 This installs PyScheduler with all optional dependencies for the best experience.
 
 ### Minimal Installation
 ```bash
-pip install pyscheduler
+pip install pyscheduler-fox
 ```
 
 This installs only the core PyScheduler without optional dependencies.
@@ -22,28 +22,28 @@ PyScheduler works without any external dependencies, but optional packages enhan
 
 ### YAML Configuration Support
 ```bash
-pip install pyscheduler[yaml]
+pip install pyscheduler-fox[yaml]
 # OR manually
 pip install pyyaml>=5.1.0
 ```
 
 ### Timezone Support
 ```bash
-pip install pyscheduler[timezone]
+pip install pyscheduler-fox[timezone]
 # OR manually
 pip install pytz>=2021.1
 ```
 
 ### CRON Expression Support
 ```bash
-pip install pyscheduler[cron]
+pip install pyscheduler-fox[cron]
 # OR manually
 pip install croniter>=1.0.0
 ```
 
 ### All Optional Dependencies
 ```bash
-pip install pyscheduler[full]
+pip install pyscheduler-fox[full]
 ```
 
 ## Development Installation
@@ -57,7 +57,7 @@ pip install -e .[dev]
 
 ### Development Dependencies
 ```bash
-pip install pyscheduler[dev]
+pip install pyscheduler-fox[dev]
 ```
 
 Includes: pytest, pytest-cov, black, flake8, mypy
@@ -89,7 +89,7 @@ scheduler.start()
 ```dockerfile
 FROM python:3.9-slim
 
-RUN pip install pyscheduler[full]
+RUN pip install pyscheduler-fox[full]
 
 COPY your_tasks.py /app/
 WORKDIR /app
@@ -104,7 +104,7 @@ CMD ["python", "your_tasks.py"]
 # For now, use pip within conda environment
 conda create -n pyscheduler python=3.9
 conda activate pyscheduler
-pip install pyscheduler[full]
+pip install pyscheduler-fox[full]
 ```
 
 ## Troubleshooting Installation
@@ -114,7 +114,7 @@ pip install pyscheduler[full]
 **ImportError: No module named 'pyscheduler'**
 ```bash
 pip install --upgrade pip
-pip install pyscheduler[full]
+pip install pyscheduler-fox[full]
 ```
 
 **Permission Denied (Linux/macOS)**
@@ -124,7 +124,7 @@ pip install --user pyscheduler[full]
 
 **Dependencies Conflict**
 ```bash
-pip install pyscheduler --no-deps
+pip install pyscheduler-fox --no-deps
 # Then install dependencies manually
 ```
 
@@ -136,5 +136,5 @@ source pyscheduler_env/bin/activate  # Linux/macOS
 # OR
 pyscheduler_env\Scripts\activate     # Windows
 
-pip install pyscheduler[full]
+pip install pyscheduler-fox[full]
 ```

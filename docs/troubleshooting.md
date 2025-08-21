@@ -18,7 +18,7 @@ pip list | grep pyscheduler
 
 # Reinstall
 pip uninstall pyscheduler
-pip install pyscheduler[full]
+pip install pyscheduler-fox[full]
 
 # Check Python path
 python -c "import sys; print(sys.path)"
@@ -34,10 +34,10 @@ Warning: PyYAML not installed. YAML configuration disabled.
 **Solution**:
 ```bash
 # Install all optional dependencies
-pip install pyscheduler[full]
+pip install pyscheduler-fox[full]
 
 # Or install specific features
-pip install pyscheduler[yaml,cron,timezone]
+pip install pyscheduler-fox[yaml,cron,timezone]
 ```
 
 ## Runtime Issues

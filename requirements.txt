@@ -1,5 +1,5 @@
 # PyScheduler - Optional Dependencies
-# Install with: pip install pyscheduler[full]
+# Install with: pip install pyscheduler-fox[full]
 
 # YAML configuration support
 pyyaml>=5.1.0
