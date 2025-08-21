@@ -1,0 +1,33 @@
+# PyScheduler - Fichiers à inclure dans la distribution
+
+include README.md
+include LICENSE
+include CHANGELOG.md
+include requirements.txt
+include requirements-dev.txt
+include pyproject.toml
+
+# Documentation
+recursive-include docs *.md *.rst *.txt *.py
+recursive-include docs/_static *
+recursive-include docs/_templates *
+
+# Exemples
+recursive-include examples *.py *.yaml *.yml *.md
+
+# Tests
+recursive-include tests *.py
+
+# Configuration
+include *.cfg *.ini *.toml
+
+# Exclure les fichiers de développement
+global-exclude *.pyc
+global-exclude *.pyo
+global-exclude *.pyd
+global-exclude __pycache__
+global-exclude .git*
+global-exclude .DS_Store
+global-exclude *.log
+global-exclude *.pid
+global-exclude *.sock
