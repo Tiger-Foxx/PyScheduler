@@ -215,16 +215,18 @@ class Task:
         # Logger
         self.logger = get_default_logger()
         
-        # Planification
+        # Planification - IMPORTANT: Calculer après avoir défini tous les attributs
         self.next_run_time: Optional[datetime] = None
-        self._calculate_next_run()
-        
+        self.last_run_time: Optional[datetime] = None
         
         # Informations sur la fonction
         self._function_info = get_function_info(func)
         
         # Validation initiale
         self._validate()
+        
+        # CRITIQUE: Calculer la première exécution après validation
+        self._calculate_next_run()
     
     def _validate(self):
         """Valide la configuration de la tâche"""
@@ -242,9 +244,12 @@ class Task:
         
         if self.end_time and self.start_time and self.end_time <= self.start_time:
             raise ValidationError("end_time doit être après start_time")
-    
+
     def _calculate_next_run(self):
-        """Calcule la prochaine exécution selon le type de planification"""
+        """
+        Calcule la prochaine exécution selon le type de planification
+        CORRIGÉ: Gestion correcte de tous les types de planification
+        """
         if not self.enabled or self._is_cancelled:
             self.next_run_time = None
             return
@@ -266,26 +271,114 @@ class Task:
             self.logger.debug(f"Tâche '{self.name}' : période de validité expirée")
             return
         
-        # Calcul selon le type de planification
-        from .triggers import TriggerFactory  # Import local pour éviter la circularité
+        # ===== CORRECTION CRITIQUE: Calcul correct par type =====
         
-        trigger = TriggerFactory.create_trigger(self.schedule_type, self.schedule_value)
-        self.next_run_time = trigger.get_next_run_time(self._get_last_run_time())
+        if self.schedule_type == ScheduleType.INTERVAL:
+            # Tâches d'intervalle
+            if self.last_run_time:
+                # Exécution suivante = dernière + intervalle
+                self.next_run_time = self.last_run_time + timedelta(seconds=self.schedule_value)
+            else:
+                # Première exécution immédiate
+                self.next_run_time = now
+            
+        elif self.schedule_type == ScheduleType.STARTUP:
+            # Tâches de démarrage - une seule fois au début
+            if self.last_run_time is None:
+                self.next_run_time = now  # Exécution immédiate
+            else:
+                self.next_run_time = None  # Plus jamais après
+            
+        elif self.schedule_type == ScheduleType.SHUTDOWN:
+            # Tâches d'arrêt - gérées spécialement par le scheduler
+            self.next_run_time = None
+            
+        elif self.schedule_type == ScheduleType.ONCE:
+            # Exécution unique à une date précise
+            if self.last_run_time is None:
+                if isinstance(self.schedule_value, datetime):
+                    self.next_run_time = self.schedule_value
+                elif isinstance(self.schedule_value, str):
+                    # FIX: Utiliser datetime directement sans import local
+                    try:
+                        self.next_run_time = datetime.fromisoformat(self.schedule_value)
+                    except ValueError:
+                        self.logger.error(f"Format de date invalide pour '{self.name}': {self.schedule_value}")
+                        self.next_run_time = None
+                else:
+                    self.next_run_time = None
+            else:
+                self.next_run_time = None  # Déjà exécutée
+                
+        elif self.schedule_type == ScheduleType.DAILY:
+            # Exécution quotidienne à une heure précise (HH:MM)
+            if isinstance(self.schedule_value, str):
+                try:
+                    hour, minute = map(int, self.schedule_value.split(':'))
+                    next_time = now.replace(hour=hour, minute=minute, second=0, microsecond=0)
+                    
+                    # Si l'heure est déjà passée aujourd'hui, programmer pour demain
+                    if next_time <= now:
+                        next_time += timedelta(days=1)
+                    
+                    self.next_run_time = next_time
+                except ValueError:
+                    self.logger.error(f"Format d'heure invalide pour '{self.name}': {self.schedule_value}")
+                    self.next_run_time = None
+            else:
+                self.next_run_time = None
+                
+        elif self.schedule_type == ScheduleType.WEEKLY:
+            # Exécution hebdomadaire (jour_semaine, "HH:MM")
+            if isinstance(self.schedule_value, (list, tuple)) and len(self.schedule_value) == 2:
+                try:
+                    weekday, time_str = self.schedule_value
+                    hour, minute = map(int, time_str.split(':'))
+                    
+                    # Calculer le prochain jour de la semaine
+                    days_ahead = weekday - now.weekday()
+                    if days_ahead <= 0:  # Le jour cible est aujourd'hui ou déjà passé
+                        days_ahead += 7
+                    
+                    next_time = now + timedelta(days=days_ahead)
+                    next_time = next_time.replace(hour=hour, minute=minute, second=0, microsecond=0)
+                    self.next_run_time = next_time
+                except (ValueError, TypeError):
+                    self.logger.error(f"Format de planification hebdomadaire invalide pour '{self.name}': {self.schedule_value}")
+                    self.next_run_time = None
+            else:
+                self.next_run_time = None
+                
+        elif self.schedule_type == ScheduleType.CRON:
+            # Expression cron - utiliser croniter si disponible
+            try:
+                from croniter import croniter
+                cron = croniter(self.schedule_value, now)
+                self.next_run_time = cron.get_next(datetime)
+            except ImportError:
+                self.logger.error(f"croniter non installé pour la tâche '{self.name}'")
+                self.next_run_time = None
+            except Exception as e:
+                self.logger.error(f"Expression cron invalide pour '{self.name}': {e}")
+                self.next_run_time = None
+        else:
+            # Type de planification non supporté
+            self.logger.error(f"Type de planification non supporté: {self.schedule_type}")
+            self.next_run_time = None
         
+        # Debug pour vérifier les calculs
         if self.next_run_time:
             self.logger.debug(
-                f"Tâche '{self.name}' : prochaine exécution à {self.next_run_time}"
+                f"Tâche '{self.name}' ({self.schedule_type.value}): "
+                f"prochaine exécution à {self.next_run_time.strftime('%H:%M:%S')}"
             )
-    
-    def _get_last_run_time(self) -> Optional[datetime]:
-        """Retourne la date de dernière exécution"""
-        if self._execution_history:
-            return self._execution_history[-1].start_time
-        return None
+        else:
+            self.logger.debug(f"Tâche '{self.name}': aucune prochaine exécution planifiée")
     
     def should_run(self, current_time: Optional[datetime] = None) -> bool:
         """
         Détermine si la tâche doit s'exécuter maintenant
+        CORRIGÉ: Vérification robuste avec recalcul automatique
         
         Args:
             current_time: Heure actuelle (par défaut: datetime.now())
@@ -296,15 +389,23 @@ class Task:
         if not self.enabled or self._is_cancelled or self._is_running:
             return False
         
-        if not self.next_run_time:
-            return False
-        
         current_time = current_time or datetime.now()
-        return current_time >= self.next_run_time
+        
+        # Si pas de prochaine exécution calculée, essayer de la calculer
+        if self.next_run_time is None:
+            self._calculate_next_run()
+        
+        # Vérifier si c'est le moment
+        if self.next_run_time and current_time >= self.next_run_time:
+            self.logger.debug(f"Tâche '{self.name}' prête à s'exécuter")
+            return True
+        
+        return False
     
     async def execute(self) -> TaskExecution:
         """
         Exécute la tâche avec gestion complète des erreurs et retry
+        CORRIGÉ: Mise à jour correcte des temps d'exécution
         
         Returns:
             Résultat de l'exécution
@@ -341,9 +442,6 @@ class Task:
             execution.result = result
             execution.status = TaskStatus.SUCCESS
             
-            # Calculer la prochaine exécution
-            self._calculate_next_run()
-            
             self.logger.task_completed(
                 self.name, 
                 execution.duration,
@@ -371,6 +469,9 @@ class Task:
                 self._is_running = False
                 self._current_execution = None
                 
+                # CRITIQUE: Mettre à jour last_run_time pour le calcul suivant
+                self.last_run_time = execution.start_time
+                
                 # Mettre à jour l'historique et les stats
                 self._execution_history.append(execution)
                 self.stats.update(execution)
@@ -378,6 +479,9 @@ class Task:
                 # Limiter l'historique pour éviter la consommation mémoire
                 if len(self._execution_history) > 100:
                     self._execution_history = self._execution_history[-50:]
+            
+            # CRITIQUE: Calculer la prochaine exécution après mise à jour
+            self._calculate_next_run()
         
         return execution
     
@@ -548,6 +652,7 @@ class Task:
             'start_time': self.start_time.isoformat(),
             'end_time': self.end_time.isoformat() if self.end_time else None,
             'next_run_time': self.next_run_time.isoformat() if self.next_run_time else None,
+            'last_run_time': self.last_run_time.isoformat() if self.last_run_time else None,
             'is_running': self.is_running,
             'is_cancelled': self.is_cancelled,
             'run_count': self.run_count,

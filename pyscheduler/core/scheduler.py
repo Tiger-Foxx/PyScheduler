@@ -739,9 +739,10 @@ class PyScheduler:
             if thread.is_alive():
                 self.logger.warning(f"Thread {thread.name} ne s'est pas arrêté dans les temps")
     
+
     def _scheduler_loop(self):
         """
-        Boucle principale du scheduler
+        Boucle principale du scheduler - CORRIGÉE
         
         Vérifie périodiquement quelles tâches doivent s'exécuter
         et les soumet aux exécuteurs appropriés.
@@ -759,24 +760,52 @@ class PyScheduler:
                 current_time = datetime.now()
                 tasks_to_run = []
                 
+                # DEBUG: Affichage détaillé (temporaire)
+                task_count = len(self._tasks)
+                
                 with self._tasks_lock:
                     for task in self._tasks.values():
-                        if task.should_run(current_time):
+                        # Debug détaillé pour chaque tâche
+                        should_run = task.should_run(current_time)
+                        
+                        if should_run:
                             tasks_to_run.append(task)
+                            self.logger.debug(
+                                f"✅ Tâche '{task.name}' prête à s'exécuter "
+                                f"(prévue: {task.next_run_time.strftime('%H:%M:%S') if task.next_run_time else 'None'})"
+                            )
+                        else:
+                            self.logger.debug(
+                                f"⏳ Tâche '{task.name}' en attente "
+                                f"(prochaine: {task.next_run_time.strftime('%H:%M:%S') if task.next_run_time else 'Jamais'}, "
+                                f"enabled: {task.enabled}, running: {task.is_running})"
+                            )
+                
+                # Log périodique de l'état
+                if task_count > 0:
+                    self.logger.debug(
+                        f"🔍 Vérification {task_count} tâches à {current_time.strftime('%H:%M:%S')} - "
+                        f"{len(tasks_to_run)} prêtes"
+                    )
                 
                 # Soumettre les tâches aux exécuteurs
                 for task in tasks_to_run:
                     try:
-                        self._executor_manager.submit_task(task)
+                        request_id = self._executor_manager.submit_task(task)
+                        self.logger.info(
+                            f"🚀 Tâche '{task.name}' soumise à l'exécuteur (ID: {request_id})"
+                        )
                     except Exception as e:
-                        self.logger.error(f"Erreur soumission tâche '{task.name}': {e}")
+                        self.logger.error(f"❌ Erreur soumission tâche '{task.name}': {e}")
                 
                 # Dormir un peu pour éviter une charge CPU excessive
-                time.sleep(0.1)  # 100ms de résolution
+                time.sleep(1.0)  # 1 seconde de résolution pour le debug
                 
             except Exception as e:
-                self.logger.error(f"Erreur dans la boucle principale: {e}")
-                time.sleep(1)  # Pause plus longue en cas d'erreur
+                self.logger.error(f"💥 Erreur dans la boucle principale: {e}")
+                import traceback
+                self.logger.error(traceback.format_exc())
+                time.sleep(5)  # Pause plus longue en cas d'erreur
         
         self.logger.debug("Boucle principale du scheduler arrêtée")
     

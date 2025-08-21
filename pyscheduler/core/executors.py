@@ -172,21 +172,21 @@ class BaseExecutor(ABC):
             raise ExecutionError("L'exécuteur est en cours d'arrêt")
         
         # Utiliser la priorité de la tâche si non spécifiée
-        task_priority = priority or task.priority
-        
+        task_priority = priority or getattr(task, 'priority', Priority.NORMAL)
+
         # Créer la demande d'exécution
         request = ExecutionRequest(task=task, priority=task_priority)
-        
+
         # Ajouter à la queue
         self._task_queue.put(request)
-        
+
         with self._lock:
             self.stats.queue_size = self._task_queue.qsize()
-        
+
         self.logger.debug(
             f"Tâche '{task.name}' soumise à l'exécuteur {self.name}",
             request_id=request.request_id,
-            priority=task_priority.name
+            priority=task_priority.name if task_priority else 'NORMAL'
         )
         
         return request.request_id
@@ -328,8 +328,10 @@ class ThreadExecutor(BaseExecutor):
         self._thread_pool: Optional[ThreadPoolExecutor] = None
         self._worker_tasks: Set[asyncio.Task] = set()
     
+    # REMPLACE la méthode start() dans ThreadExecutor (ligne ~330)
+
     def start(self):
-        """Démarre l'exécuteur avec pool de threads"""
+        """Démarre l'exécuteur avec pool de threads RÉELS"""
         if self._running:
             self.logger.warning(f"Exécuteur {self.name} déjà démarré")
             return
@@ -343,13 +345,52 @@ class ThreadExecutor(BaseExecutor):
             thread_name_prefix=f"PyScheduler-{self.name}"
         )
         
-        # Démarrer les workers async
-        loop = asyncio.get_event_loop()
-        for i in range(min(self.max_workers, 5)):  # Limiter les workers async
-            worker_task = loop.create_task(self._worker_loop(f"worker-{i}"))
-            self._worker_tasks.add(worker_task)
+        # Démarrer des workers dans des VRAIS threads (pas async)
+        self._worker_threads = []
+        for i in range(min(self.max_workers, 5)):
+            worker_thread = threading.Thread(
+                target=self._sync_worker_loop,
+                args=(f"worker-{i}",),
+                daemon=True
+            )
+            worker_thread.start()
+            self._worker_threads.append(worker_thread)
+            print(f"🐛 DEBUG: Thread worker {i} démarré")
         
         self.logger.info(f"Exécuteur {self.name} démarré avec {self.max_workers} threads")
+
+    def _sync_worker_loop(self, worker_name: str):
+        """Boucle worker SYNCHRONE dans un thread"""
+        print(f"🐛 DEBUG: {worker_name} THREAD DÉMARRE")
+        
+        while self._running and not self._stopping:
+            try:
+                # Récupérer une tâche
+                try:
+                    request = self._task_queue.get(block=True, timeout=1.0)
+                except Empty:
+                    continue
+                
+                print(f"🔥 {worker_name} traite {request.task.name}")
+                
+                # Exécuter en mode synchrone
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                
+                try:
+                    execution = loop.run_until_complete(request.task.execute())
+                    print(f"✅ {worker_name} terminé: {execution.status}")
+                finally:
+                    loop.close()
+                
+                self._task_queue.task_done()
+                
+            except Exception as e:
+                print(f"❌ Erreur {worker_name}: {e}")
+                import traceback
+                traceback.print_exc()
+        
+        print(f"🐛 DEBUG: {worker_name} THREAD ARRÊTÉ")
     
     def stop(self, timeout: float = 30.0):
         """Arrête l'exécuteur proprement"""
@@ -378,7 +419,7 @@ class ThreadExecutor(BaseExecutor):
         
         # Arrêter le pool de threads
         if self._thread_pool:
-            self._thread_pool.shutdown(wait=True, timeout=timeout / 2)
+            self._thread_pool.shutdown(wait=True)
             self._thread_pool = None
         
         self._running = False
@@ -391,13 +432,15 @@ class ThreadExecutor(BaseExecutor):
         Args:
             worker_name: Nom du worker pour logging
         """
+        print(f"🐛 DEBUG: {worker_name} DÉMARRE")  # ← AJOUTE ÇA
+
         self.logger.debug(f"Worker {worker_name} démarré")
         
         while self._running and not self._stopping:
             try:
                 # Récupérer une tâche de la queue (avec timeout)
                 try:
-                    request = self._task_queue.get(timeout=1.0)
+                    request = self._task_queue.get(block=True, timeout=1.0)
                 except Empty:
                     continue
                 
@@ -494,7 +537,7 @@ class AsyncExecutor(BaseExecutor):
             try:
                 # Récupérer une tâche
                 try:
-                    request = self._task_queue.get(timeout=1.0)
+                    request = self._task_queue.get(block=True, timeout=1.0)
                 except Empty:
                     continue
                 
