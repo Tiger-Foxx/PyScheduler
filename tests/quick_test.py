@@ -155,8 +155,12 @@ def test_scheduler_lifecycle():
     print("⏱️  Attente de 8 secondes pour observer les exécutions...")
     time.sleep(8)
     
-    # Vérifier quelques exécutions
-    assert test_results["startup_executed"], " Tâche startup non exécutée"
+    # Vérifier quelques exécutions (avec délai pour que ça s'exécute)
+    time.sleep(2)  # Laisser 2 secondes de plus pour les exécutions
+    print(f"DEBUG: startup_executed = {test_results['startup_executed']}")
+    print(f"DEBUG: interval_executions = {test_results['interval_executions']}")
+
+    assert test_results["startup_executed"], " Tâche startup non exécutée"  
     assert test_results["interval_executions"] > 0, " Tâches d'intervalle non exécutées"
     print(f" {test_results['interval_executions']} exécutions d'intervalle")
     

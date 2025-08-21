@@ -899,6 +899,10 @@ class PyScheduler:
         # DEBUG: Voir combien de tâches sont dans le registre
         self.logger.info(f"Chargement de {len(all_tasks)} tâches depuis le registre")
         
+        
+        # DEBUG: Ajoute cette ligne
+        self.logger.info(f"🔍 DEBUG: {len(all_tasks)} tâches trouvées dans le registre")
+        
         for task_config in all_tasks:
             try:
                 # La fonction est stockée dans les métadonnées
