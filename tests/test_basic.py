@@ -232,7 +232,7 @@ class TestScheduler:
         assert scheduler.is_running
         
         # Arrêt
-        scheduler.stop()
+        scheduler.stop(timeout=5.0)  # <-- Ajouter timeout court
         assert scheduler.is_stopped
 
 
@@ -254,7 +254,7 @@ class TestIntegration:
         # Attendre quelques exécutions
         time.sleep(3.5)
         
-        scheduler.stop()
+        scheduler.stop(timeout=2.0)
         
         # Vérifier qu'on a eu au moins 2-3 exécutions
         assert len(executions) >= 2, f"Seulement {len(executions)} exécutions"

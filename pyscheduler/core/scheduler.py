@@ -894,8 +894,12 @@ class PyScheduler:
     def _load_tasks_from_registry(self):
         """Charge les tâches depuis le registre des décorateurs"""
         registry = get_task_registry()
+        all_tasks = registry.get_all_tasks()
         
-        for task_config in registry.get_all_tasks():
+        # DEBUG: Voir combien de tâches sont dans le registre
+        self.logger.info(f"Chargement de {len(all_tasks)} tâches depuis le registre")
+        
+        for task_config in all_tasks:
             try:
                 # La fonction est stockée dans les métadonnées
                 func = task_config.metadata.get('_function_ref')
@@ -903,6 +907,7 @@ class PyScheduler:
                     # Éviter les doublons
                     if task_config.name not in self._tasks:
                         self.add_task_from_config(task_config, func)
+                        self.logger.info(f"Tâche décorée '{task_config.name}' chargée")
                 
             except Exception as e:
                 self.logger.error(f"Erreur chargement tâche décorée '{task_config.name}': {e}")

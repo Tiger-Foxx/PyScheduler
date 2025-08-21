@@ -106,6 +106,9 @@ def test_basic_functionality():
     
     # Créer le scheduler
     scheduler = PyScheduler()
+    # AJOUTE CETTE LIGNE :
+    scheduler._load_tasks_from_registry()  # Force le chargement des décorateurs
+    print("[OK] Scheduler créé")
     
     # Vérifier l'état initial
     assert scheduler.is_stopped, " Scheduler devrait être arrêté initialement"
@@ -138,6 +141,10 @@ def test_scheduler_lifecycle():
     print("\n Test 2: Cycle de vie du scheduler")
     
     scheduler = PyScheduler()
+    
+    # AJOUTE CETTE LIGNE :
+    scheduler._load_tasks_from_registry()  # Force le chargement des décorateurs
+    print("[OK] Scheduler créé")
     
     # Test démarrage
     scheduler.start()
