@@ -223,7 +223,7 @@ def setup_default_logger(
 
 def get_default_logger() -> PySchedulerLogger:
     """Retourne le logger par défaut"""
-    global _default_logger
+    # global _default_logger
     if _default_logger is None:
         setup_default_logger()
     return _default_logger
