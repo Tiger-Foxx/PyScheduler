@@ -1,23 +1,23 @@
 # PyScheduler - Configuration
 
-Ce module gère toute la configuration de PyScheduler. Il propose deux approches principales :
-1. **Fichiers YAML** pour configuration externe
-2. **Décorateurs Python** pour configuration dans le code
+This module handles all of PyScheduler's configuration. It offers two main approaches:
+1.  **YAML files** for external configuration
+2.  **Python decorators** for in-code configuration
 
-## Table des matières
+## Table of Contents
 
-- [Configuration via fichier YAML](#configuration-via-fichier-yaml)
-- [Configuration via décorateurs](#configuration-via-décorateurs)
-- [Types de planification](#types-de-planification)
-- [Configuration avancée](#configuration-avancée)
-- [API du ConfigManager](#api-du-configmanager)
-- [Registre des tâches](#registre-des-tâches)
+- [Configuration via YAML file](#configuration-via-yaml-file)
+- [Configuration via decorators](#configuration-via-decorators)
+- [Scheduling Types](#scheduling-types)
+- [Advanced Configuration](#advanced-configuration)
+- [ConfigManager API](#configmanager-api)
+- [Task Registry](#task-registry)
 
 ---
 
-## Configuration via fichier YAML
+## Configuration via YAML file
 
-### Structure de base
+### Basic Structure
 
 ```yaml
 # scheduler_config.yaml
@@ -47,10 +47,10 @@ tasks:
       max_delay: 300
     tags: ["backup", "database"]
     metadata:
-      description: "Sauvegarde quotidienne de la base"
+      description: "Daily database backup"
 ```
 
-### Exemple complet avec plusieurs tâches
+### Complete Example with Multiple Tasks
 
 ```yaml
 global_settings:
@@ -59,7 +59,7 @@ global_settings:
   log_level: "INFO"
 
 tasks:
-  # Tâche d'intervalle simple
+  # Simple interval task
   - name: "health_check"
     module: "monitoring"
     function: "check_system_health"
@@ -68,20 +68,20 @@ tasks:
       value: 300  # 5 minutes
     enabled: true
 
-  # Tâche avec expression cron
+  # Task with cron expression
   - name: "weekly_report"
     module: "reports"
     function: "generate_weekly_report"
     schedule:
       type: "cron"
-      value: "0 9 * * 1"  # Lundi à 9h
+      value: "0 9 * * 1"  # Monday at 9am
     priority: "normal"
     timeout: "30m"
     retry_policy:
       max_attempts: 2
       backoff_factor: 1.5
 
-  # Tâche unique
+  # One-time task
   - name: "migration_task"
     module: "maintenance"
     function: "migrate_data"
@@ -90,7 +90,7 @@ tasks:
       value: "2025-09-01 02:00:00"
     priority: "critical"
     
-  # Tâche de démarrage
+  # Startup task
   - name: "init_system"
     module: "system"
     function: "initialize"
@@ -99,161 +99,161 @@ tasks:
       value: null
 ```
 
-### Chargement d'un fichier YAML
+### Loading a YAML file
 
 ```python
 from pyscheduler.config import ConfigManager
 
-# Charger la configuration
+# Load configuration
 manager = ConfigManager()
 config = manager.load_from_file("scheduler_config.yaml")
 
-# Utiliser avec le scheduler
+# Use with the scheduler
 from pyscheduler import PyScheduler
 scheduler = PyScheduler(config=config)
 ```
 
 ---
 
-## Configuration via décorateurs
+## Configuration via decorators
 
-### Décorateurs de base
+### Basic Decorators
 
 ```python
 from pyscheduler.config import schedule_task, task, every, daily
 
-# Méthode explicite avec schedule_task
+# Explicit method with schedule_task
 @schedule_task(interval=60, priority="high")
 def check_logs():
-    print("Vérification des logs")
+    print("Checking logs")
 
-# Méthode simplifiée avec auto-détection
-@task(60)  # Auto-détecte: intervalle de 60 secondes
+# Simplified method with auto-detection
+@task(60)  # Auto-detects: 60-second interval
 def simple_task():
-    print("Tâche simple")
+    print("Simple task")
 
-@task("09:30")  # Auto-détecte: quotidien à 9h30
+@task("09:30")  # Auto-detects: daily at 9:30am
 def morning_task():
-    print("Tâche matinale")
+    print("Morning task")
 
-@task("0 */2 * * *")  # Auto-détecte: expression cron
+@task("0 */2 * * *")  # Auto-detects: cron expression
 def cron_task():
-    print("Toutes les 2 heures")
+    print("Every 2 hours")
 
-# Méthode lisible avec every
+# Readable method with every
 @every(minutes=5)
 def frequent_task():
-    print("Toutes les 5 minutes")
+    print("Every 5 minutes")
 
 @every(hours=2, minutes=30)
 def periodic_task():
-    print("Toutes les 2h30")
+    print("Every 2h30")
 
-# Méthode spécialisée
+# Specialized method
 @daily("14:00")
 def afternoon_report():
-    print("Rapport de l'après-midi")
+    print("Afternoon report")
 ```
 
-### Décorateurs avancés
+### Advanced Decorators
 
 ```python
 from pyscheduler.config import weekly, once, startup, shutdown, critical
 
-# Tâche hebdomadaire
-@weekly(1, "09:00")  # Mardi à 9h (0=dimanche, 1=lundi, ...)
+# Weekly task
+@weekly(1, "09:00")  # Tuesday at 9am (0=sunday, 1=monday, ...)
 def weekly_maintenance():
-    print("Maintenance hebdomadaire")
+    print("Weekly maintenance")
 
-# Tâche unique
+# One-time task
 @once("2025-12-25 00:00:00")
 def christmas_greeting():
-    print("Joyeux Noël!")
+    print("Merry Christmas!")
 
-# Tâches spéciales
+# Special tasks
 @startup()
 def initialize_app():
-    print("Initialisation au démarrage")
+    print("Initialization at startup")
 
 @shutdown()
 def cleanup_app():
-    print("Nettoyage à l'arrêt")
+    print("Cleanup at shutdown")
 
-# Tâche critique
+# Critical task
 @critical(interval=30)
 def monitor_critical_service():
-    print("Surveillance critique")
+    print("Critical monitoring")
 ```
 
-### Configuration complète avec décorateur
+### Complete Configuration with Decorator
 
 ```python
 @schedule_task(
-    interval="5m",           # Toutes les 5 minutes
-    name="custom_monitor",   # Nom personnalisé
-    priority="high",         # Priorité élevée
-    timeout="2m",           # Timeout de 2 minutes
-    max_runs=100,           # Maximum 100 exécutions
-    max_attempts=3,         # 3 tentatives en cas d'échec
-    backoff_factor=2.0,     # Délai exponentiel
-    max_delay="5m",         # Délai max entre tentatives
+    interval="5m",           # Every 5 minutes
+    name="custom_monitor",   # Custom name
+    priority="high",         # High priority
+    timeout="2m",           # 2-minute timeout
+    max_runs=100,           # Maximum 100 runs
+    max_attempts=3,         # 3 attempts on failure
+    backoff_factor=2.0,     # Exponential backoff
+    max_delay="5m",         # Max delay between attempts
     tags=["monitoring", "critical"],
     metadata={"team": "ops", "alert": True}
 )
 def advanced_monitor():
-    """Surveillance avancée avec configuration complète"""
-    print("Surveillance en cours...")
+    """Advanced monitoring with full configuration"""
+    print("Monitoring in progress...")
 ```
 
 ---
 
-## Types de planification
+## Scheduling Types
 
-### 1. Interval (Intervalle)
+### 1. Interval
 
-Exécution toutes les X secondes.
+Runs every X seconds.
 
 ```python
-# Via décorateur
-@task(60)  # 60 secondes
+# Via decorator
+@task(60)  # 60 seconds
 @every(minutes=5)  # 5 minutes
-@schedule_task(interval="2h")  # 2 heures
+@schedule_task(interval="2h")  # 2 hours
 
 # Via YAML
 schedule:
   type: "interval"
-  value: 300  # 5 minutes en secondes
+  value: 300  # 5 minutes in seconds
 ```
 
-### 2. Cron (Expression cron)
+### 2. Cron (Cron Expression)
 
-Utilise la syntaxe cron standard (5 champs).
+Uses standard cron syntax (5 fields).
 
 ```python
-# Via décorateur  
-@task("0 9 * * 1-5")  # 9h du lundi au vendredi
-@schedule_task(cron="*/15 * * * *")  # Toutes les 15 minutes
+# Via decorator  
+@task("0 9 * * 1-5")  # 9am from Monday to Friday
+@schedule_task(cron="*/15 * * * *")  # Every 15 minutes
 
 # Via YAML
 schedule:
   type: "cron"
-  value: "0 2 * * 0"  # Dimanche à 2h
+  value: "0 2 * * 0"  # Sunday at 2am
 ```
 
-**Format cron :** `minute heure jour_mois mois jour_semaine`
-- `*` : toutes les valeurs
-- `*/5` : toutes les 5 unités
-- `1-5` : plage de 1 à 5
-- `1,3,5` : valeurs spécifiques
+**Cron format:** `minute hour day_of_month month day_of_week`
+- `*`: all values
+- `*/5`: every 5 units
+- `1-5`: range from 1 to 5
+- `1,3,5`: specific values
 
-### 3. Daily (Quotidien)
+### 3. Daily
 
-Exécution tous les jours à une heure précise.
+Runs every day at a specific time.
 
 ```python
-# Via décorateur
+# Via decorator
 @daily("09:30")
-@task("14:00")  # Auto-détecté comme quotidien
+@task("14:00")  # Auto-detected as daily
 
 # Via YAML
 schedule:
@@ -261,28 +261,28 @@ schedule:
   value: "03:00"
 ```
 
-### 4. Weekly (Hebdomadaire)
+### 4. Weekly
 
-Exécution une fois par semaine.
+Runs once a week.
 
 ```python
-# Via décorateur
-@weekly(1, "09:00")  # Mardi à 9h
+# Via decorator
+@weekly(1, "09:00")  # Tuesday at 9am
 
 # Via YAML
 schedule:
   type: "weekly"
-  value: [1, "09:00"]  # [jour_semaine, heure]
+  value: [1, "09:00"]  # [day_of_week, time]
 ```
 
-**Jours de la semaine :** 0=dimanche, 1=lundi, ..., 6=samedi
+**Days of the week:** 0=sunday, 1=monday, ..., 6=saturday
 
-### 5. Once (Unique)
+### 5. Once
 
-Exécution unique à une date/heure précise.
+Single execution at a specific date/time.
 
 ```python
-# Via décorateur
+# Via decorator
 @once("2025-09-15 14:30:00")
 
 # Via YAML
@@ -293,10 +293,10 @@ schedule:
 
 ### 6. Startup/Shutdown
 
-Exécution au démarrage ou arrêt du scheduler.
+Runs on scheduler startup or shutdown.
 
 ```python
-# Via décorateur
+# Via decorator
 @startup()
 @shutdown()
 
@@ -308,19 +308,19 @@ schedule:
 
 ---
 
-## Configuration avancée
+## Advanced Configuration
 
-### Gestion des erreurs et retry
+### Error Handling and Retry
 
 ```python
 @schedule_task(
     interval=60,
-    max_attempts=5,        # 5 tentatives maximum
-    backoff_factor=1.5,    # Délai x1.5 à chaque tentative
-    max_delay="10m"        # Délai maximum de 10 minutes
+    max_attempts=5,        # 5 maximum attempts
+    backoff_factor=1.5,    # Delay x1.5 on each attempt
+    max_delay="10m"        # Maximum delay of 10 minutes
 )
 def fragile_task():
-    # Code pouvant échouer
+    # Code that might fail
     pass
 ```
 
@@ -331,13 +331,13 @@ retry_policy:
   max_delay: 300
 ```
 
-### Priorités
+### Priorities
 
 ```python
-# Via décorateur
-@critical(interval=30)     # Priorité critique
-@high_priority(daily="09:00")  # Priorité haute
-@low_priority(weekly=(0, "23:00"))  # Priorité basse
+# Via decorator
+@critical(interval=30)     # Critical priority
+@high_priority(daily="09:00")  # High priority
+@low_priority(weekly=(0, "23:00"))  # Low priority
 
 # Via configuration
 @schedule_task(interval=60, priority="normal")
@@ -350,14 +350,14 @@ priority: "critical"  # critical, high, normal, low, idle
 ### Timeout
 
 ```python
-@schedule_task(interval=60, timeout="5m")  # Timeout de 5 minutes
+@schedule_task(interval=60, timeout="5m")  # 5-minute timeout
 ```
 
 ```yaml
-timeout: 300  # 5 minutes en secondes
+timeout: 300  # 5 minutes in seconds
 ```
 
-### Tags et métadonnées
+### Tags and Metadata
 
 ```python
 @schedule_task(
@@ -375,19 +375,19 @@ def tagged_task():
 
 ---
 
-## API du ConfigManager
+## ConfigManager API
 
-### Chargement de configuration
+### Loading Configuration
 
 ```python
 from pyscheduler.config import ConfigManager
 
 manager = ConfigManager()
 
-# Depuis un fichier YAML
+# From a YAML file
 config = manager.load_from_file("config.yaml")
 
-# Depuis un dictionnaire
+# From a dictionary
 config_dict = {
     "global_settings": {"timezone": "UTC"},
     "tasks": [...]
@@ -395,28 +395,28 @@ config_dict = {
 config = manager.load_from_dict(config_dict)
 ```
 
-### Sauvegarde de configuration
+### Saving Configuration
 
 ```python
-# Sauvegarder en YAML
+# Save to YAML
 manager.save_to_file(config, "output.yaml")
 
-# Créer une configuration par défaut
+# Create a default configuration
 manager.create_default_config("default_config.yaml")
 ```
 
 ### Validation
 
 ```python
-# Valider qu'une fonction de tâche existe
+# Validate that a task function exists
 for task in config.tasks:
     manager.validate_task_function(task)
 ```
 
-### Manipulation de configuration
+### Manipulating Configuration
 
 ```python
-# Ajouter une tâche
+# Add a task
 from pyscheduler.config import TaskConfig, ScheduleType
 
 task = TaskConfig(
@@ -428,23 +428,23 @@ task = TaskConfig(
 )
 config.add_task(task)
 
-# Supprimer une tâche
+# Remove a task
 config.remove_task("task_name")
 
-# Récupérer une tâche
+# Get a task
 task = config.get_task("task_name")
 ```
 
 ---
 
-## Registre des tâches
+## Task Registry
 
-Le registre collecte automatiquement toutes les tâches définies avec les décorateurs.
+The registry automatically collects all tasks defined with decorators.
 
 ```python
 from pyscheduler.config import get_task_registry
 
-# Dans votre code, définissez des tâches
+# In your code, define tasks
 @task(60)
 def task1():
     pass
@@ -453,73 +453,73 @@ def task1():
 def task2():
     pass
 
-# Récupérer toutes les tâches enregistrées
+# Get all registered tasks
 registry = get_task_registry()
 all_tasks = registry.get_all_tasks()
 
-# Utiliser avec le scheduler
+# Use with the scheduler
 from pyscheduler import PyScheduler
 scheduler = PyScheduler()
 
-# Ajouter toutes les tâches du registre
+# Add all tasks from the registry
 for task_config in all_tasks:
     func = task_config.metadata['_function_ref']
     scheduler.add_task_from_config(task_config, func)
 ```
 
-### Nettoyage du registre
+### Clearing the Registry
 
 ```python
-# Vider le registre (utile pour les tests)
+# Clear the registry (useful for tests)
 registry = get_task_registry()
 registry.clear()
 ```
 
 ---
 
-## Exemples pratiques
+## Practical Examples
 
-### Application web avec surveillance
+### Web Application with Monitoring
 
 ```python
 from pyscheduler.config import *
 
 @every(minutes=1)
 def check_database():
-    """Vérification de la base toutes les minutes"""
-    # Code de vérification
+    """Check the database every minute"""
+    # Verification code
     pass
 
 @every(minutes=5)
 def check_api_endpoints():
-    """Test des endpoints API"""
-    # Code de test
+    """Test API endpoints"""
+    # Test code
     pass
 
 @daily("02:00")
 def backup_database():
-    """Sauvegarde quotidienne"""
-    # Code de sauvegarde
+    """Daily backup"""
+    # Backup code
     pass
 
-@weekly(0, "23:00")  # Dimanche 23h
+@weekly(0, "23:00")  # Sunday 11pm
 def weekly_cleanup():
-    """Nettoyage hebdomadaire"""
-    # Code de nettoyage
+    """Weekly cleanup"""
+    # Cleanup code
     pass
 
 @startup()
 def initialize_monitoring():
-    """Initialisation au démarrage"""
-    print("Système de surveillance démarré")
+    """Initialization at startup"""
+    print("Monitoring system started")
 
 @shutdown()
 def cleanup_monitoring():
-    """Nettoyage à l'arrêt"""
-    print("Arrêt du système de surveillance")
+    """Cleanup at shutdown"""
+    print("Shutting down monitoring system")
 ```
 
-### Configuration mixte (YAML + décorateurs)
+### Mixed Configuration (YAML + Decorators)
 
 ```python
 # config.yaml
@@ -533,13 +533,13 @@ tasks:
     function: "sync_external_data"
     schedule:
       type: "cron"
-      value: "0 */6 * * *"  # Toutes les 6h
+      value: "0 */6 * * *"  # Every 6 hours
 
 # app.py
 from pyscheduler.config import *
 from pyscheduler import PyScheduler
 
-# Tâches définies par décorateur
+# Tasks defined by decorator
 @every(minutes=15)
 def internal_health_check():
     pass
@@ -548,14 +548,14 @@ def internal_health_check():
 def morning_report():
     pass
 
-# Chargement et fusion
+# Loading and merging
 manager = ConfigManager()
 yaml_config = manager.load_from_file("config.yaml")
 
 registry = get_task_registry()
 decorator_tasks = registry.get_all_tasks()
 
-# Utilisation avec le scheduler
+# Use with the scheduler
 scheduler = PyScheduler(config=yaml_config)
 for task_config in decorator_tasks:
     func = task_config.metadata['_function_ref']
@@ -564,50 +564,50 @@ for task_config in decorator_tasks:
 
 ---
 
-## Conseils d'utilisation
+## Usage Tips
 
-### 1. Choix entre YAML et décorateurs
+### 1. Choosing between YAML and Decorators
 
-**Utilisez YAML quand :**
-- Configuration externe nécessaire
-- Déploiement avec différentes configs
-- Non-développeurs doivent modifier la config
-- Tâches définies dans des modules séparés
+**Use YAML when:**
+- External configuration is needed
+- Deployment with different configs
+- Non-developers need to modify the config
+- Tasks are defined in separate modules
 
-**Utilisez les décorateurs quand :**
-- Configuration proche du code
-- Développement rapide
-- Tâches simples et intégrées
-- Prototypage
+**Use decorators when:**
+- Configuration is close to the code
+- Rapid development
+- Simple and integrated tasks
+- Prototyping
 
-### 2. Bonnes pratiques
+### 2. Best Practices
 
 ```python
-# ✅ Bon : noms explicites
+# ✅ Good: explicit names
 @task(300, name="user_cleanup")
 def cleanup_inactive_users():
     pass
 
-# ❌ Éviter : noms génériques
+# ❌ Avoid: generic names
 @task(300)
 def task():
     pass
 
-# ✅ Bon : tags pour l'organisation
+# ✅ Good: tags for organization
 @daily("03:00", tags=["backup", "critical"])
 def backup_user_data():
     pass
 
-# ✅ Bon : timeout pour tâches longues
+# ✅ Good: timeout for long tasks
 @schedule_task(interval=3600, timeout="30m")
 def long_running_task():
     pass
 
-# ✅ Bon : métadonnées pour documentation
+# ✅ Good: metadata for documentation
 @task(
     "0 9 * * 1-5",
     metadata={
-        "description": "Rapport quotidien des ventes",
+        "description": "Daily sales report",
         "owner": "team-sales",
         "documentation": "https://wiki.internal/sales-report"
     }
@@ -616,10 +616,10 @@ def daily_sales_report():
     pass
 ```
 
-### 3. Gestion des erreurs
+### 3. Error Handling
 
 ```python
-# Configuration robuste avec retry
+# Robust configuration with retry
 @schedule_task(
     interval="5m",
     max_attempts=3,
@@ -628,54 +628,54 @@ def daily_sales_report():
     timeout="2m"
 )
 def api_sync():
-    """Synchronisation avec API externe"""
+    """Synchronization with external API"""
     try:
-        # Code de synchronisation
+        # Synchronization code
         pass
     except Exception as e:
-        # Log l'erreur, elle sera gérée par le retry
-        print(f"Erreur sync: {e}")
+        # Log the error, it will be handled by the retry
+        print(f"Sync error: {e}")
         raise
 ```
 
 ---
 
-## Dépannage
+## Troubleshooting
 
-### Erreurs courantes
+### Common Errors
 
-1. **Expression cron invalide**
-   ```
-   ValidationError: Expression cron doit avoir 5 parties, 6 trouvées
-   ```
-   → Vérifiez le format : `minute heure jour mois jour_semaine`
+1.  **Invalid cron expression**
+    ```
+    ValidationError: Cron expression must have 5 parts, 6 found
+    ```
+    → Check the format: `minute hour day month day_of_week`
 
-2. **Fonction introuvable**
-   ```
-   ConfigurationError: Fonction 'my_func' introuvable dans 'mymodule'
-   ```
-   → Vérifiez que le module et la fonction existent
+2.  **Function not found**
+    ```
+    ConfigurationError: Function 'my_func' not found in 'mymodule'
+    ```
+    → Check that the module and function exist
 
-3. **Durée invalide**
-   ```
-   ValidationError: Format de durée invalide: 5x
-   ```
-   → Utilisez `5s`, `5m`, `5h`, `5d` ou un nombre
+3.  **Invalid duration**
+    ```
+    ValidationError: Invalid duration format: 5x
+    ```
+    → Use `5s`, `5m`, `5h`, `5d` or a number
 
-4. **Planification ambiguë**
-   ```
-   ValidationError: Une seule méthode de planification autorisée
-   ```
-   → N'utilisez qu'un seul paramètre : `interval` OU `cron` OU `daily_at`, etc.
+4.  **Ambiguous scheduling**
+    ```
+    ValidationError: Only one scheduling method allowed
+    ```
+    → Use only one parameter: `interval` OR `cron` OR `daily_at`, etc.
 
-### Validation de configuration
+### Configuration Validation
 
 ```python
 from pyscheduler.config import validate_config_file
 
 try:
     validate_config_file("my_config.yaml")
-    print("Configuration valide ✅")
+    print("Configuration valid ✅")
 except Exception as e:
-    print(f"Configuration invalide ❌: {e}")
+    print(f"Configuration invalid ❌: {e}")
 ```

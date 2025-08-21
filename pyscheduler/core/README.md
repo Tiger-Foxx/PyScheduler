@@ -1,162 +1,162 @@
-# Documentation Technique du Cœur de PyScheduler (`pyscheduler/core`)
+# PyScheduler Core Technical Documentation (`pyscheduler/core`)
 
-Ce document fournit une description technique détaillée de chaque module, classe et fonction importante au sein du dossier `core`. Il est destiné aux développeurs et a pour but de servir de référence API interne.
-
----
-
-## Table des Matières
-1.  [**Module `scheduler.py`**](#1-module-schedulerpy---le-chef-dorchestre)
-2.  [**Module `task.py`**](#2-module-taskpy---lunité-de-travail)
-3.  [**Module `triggers.py`**](#3-module-triggerspy---le-mécanisme-de-planification)
-4.  [**Module `executors.py`**](#4-module-executorspy---le-moteur-dexécution)
+This document provides a detailed technical description of each module, class, and important function within the `core` directory. It is intended for developers and aims to serve as an internal API reference.
 
 ---
 
-## 1. Module `scheduler.py` - Le Chef d'Orchestre
+## Table of Contents
+1.  [**`scheduler.py` Module**](#1-schedulerpy-module---the-orchestrator)
+2.  [**`task.py` Module**](#2-taskpy-module---the-work-unit)
+3.  [**`triggers.py` Module**](#3-triggerspy-module---the-scheduling-mechanism)
+4.  [**`executors.py` Module**](#4-executorspy-module---the-execution-engine)
 
-Ce module contient la classe principale `PyScheduler` qui agit comme le point d'entrée central et le coordinateur de tout le système.
+---
 
-### Classe `PyScheduler`
-Gère le cycle de vie, le registre des tâches, la configuration et la coordination des exécuteurs.
+## 1. `scheduler.py` Module - The Orchestrator
 
-#### Méthodes Principales
+This module contains the main `PyScheduler` class, which acts as the central entry point and coordinator for the entire system.
+
+### `PyScheduler` Class
+Manages the lifecycle, task registry, configuration, and coordination of executors.
+
+#### Main Methods
 
 -   `__init__(config, config_file, timezone, ...)`
-    -   **Description**: Initialise le scheduler. Charge la configuration depuis un objet, un fichier, ou les paramètres fournis. Met en place les logs, les exécuteurs par défaut et les gestionnaires de sortie (`atexit`, `signal`).
-    -   **Paramètres**:
-        -   `config: PySchedulerConfig`: Un objet de configuration complet.
-        -   `config_file: str`: Chemin vers un fichier de configuration YAML.
-        -   `...`: Multiples paramètres pour surcharger la configuration par défaut (log, persistance, etc.).
+    -   **Description**: Initializes the scheduler. Loads the configuration from an object, a file, or the provided parameters. Sets up logging, default executors, and exit handlers (`atexit`, `signal`).
+    -   **Parameters**:
+        -   `config: PySchedulerConfig`: A complete configuration object.
+        -   `config_file: str`: Path to a YAML configuration file.
+        -   `...`: Multiple parameters to override the default configuration (logging, persistence, etc.).
 
 -   `add_task(func, name, interval, cron, ...)` -> `Union[Task, Callable]`
-    -   **Description**: Ajoute une tâche au scheduler. C'est une méthode flexible qui peut être utilisée directement ou comme décorateur.
-    -   **Paramètres**:
-        -   `func: Callable`: La fonction à exécuter. Si `None`, la méthode retourne un décorateur.
-        -   `name: str`: Nom unique de la tâche.
-        -   `interval`, `cron`, `daily_at`, etc.: Paramètres de planification (un seul autorisé par tâche).
-        -   `priority`, `timeout`, `executor`, etc.: Paramètres de configuration de l'exécution.
-    -   **Retourne**: Une instance de `Task` si `func` est fourni, sinon un décorateur.
+    -   **Description**: Adds a task to the scheduler. This is a flexible method that can be used directly or as a decorator.
+    -   **Parameters**:
+        -   `func: Callable`: The function to execute. If `None`, the method returns a decorator.
+        -   `name: str`: Unique name of the task.
+        -   `interval`, `cron`, `daily_at`, etc.: Scheduling parameters (only one allowed per task).
+        -   `priority`, `timeout`, `executor`, etc.: Execution configuration parameters.
+    -   **Returns**: A `Task` instance if `func` is provided, otherwise a decorator.
 
 -   `start()`
-    -   **Description**: Démarre le scheduler. Cette action charge les tâches, démarre les exécuteurs et lance les threads de contrôle (boucle de planification et de monitoring).
+    -   **Description**: Starts the scheduler. This action loads tasks, starts the executors, and launches the control threads (scheduling loop and monitoring).
 
 -   `stop(timeout: float = 30.0)`
-    -   **Description**: Arrête proprement le scheduler. Exécute les tâches `on_shutdown`, arrête les threads de contrôle et les exécuteurs, et sauvegarde l'état si la persistance est activée.
+    -   **Description**: Gracefully stops the scheduler. Executes `on_shutdown` tasks, stops control threads and executors, and saves the state if persistence is enabled.
 
 -   `run_task_now(task_name: str, executor_name: str = None)` -> `str`
-    -   **Description**: Force l'exécution immédiate d'une tâche, en contournant sa planification normale.
-    -   **Retourne**: L'ID de la demande d'exécution.
+    -   **Description**: Forces the immediate execution of a task, bypassing its normal schedule.
+    -   **Returns**: The ID of the execution request.
 
 -   `get_task(task_name: str)` -> `Optional[Task]`
-    -   **Description**: Récupère une instance de tâche par son nom.
+    -   **Description**: Retrieves a task instance by its name.
 
 -   `list_tasks(include_disabled: bool = True, tags: Set[str] = None)` -> `List[Task]`
-    -   **Description**: Retourne une liste de toutes les tâches enregistrées, avec des options de filtrage.
+    -   **Description**: Returns a list of all registered tasks, with filtering options.
 
 -   `get_stats()` -> `dict`
-    -   **Description**: Retourne un dictionnaire contenant les statistiques complètes du scheduler (état, uptime, stats des tâches, stats des exécuteurs).
+    -   **Description**: Returns a dictionary containing the complete statistics of the scheduler (state, uptime, task stats, executor stats).
 
-### Classe `SchedulerState`
-Un `Enum` qui définit les états de fonctionnement possibles du scheduler.
+### `SchedulerState` Class
+An `Enum` that defines the possible operating states of the scheduler.
 -   `STOPPED`, `STARTING`, `RUNNING`, `STOPPING`, `PAUSED`.
 
 ---
 
-## 2. Module `task.py` - L'Unité de Travail
+## 2. `task.py` Module - The Work Unit
 
-Ce module définit la classe `Task`, qui est une représentation complète et autonome d'une action planifiée.
+This module defines the `Task` class, which is a complete and autonomous representation of a scheduled action.
 
-### Classe `Task`
-Encapsule une fonction, sa planification, son état, sa configuration d'exécution et ses statistiques.
+### `Task` Class
+Encapsulates a function, its schedule, its state, its execution configuration, and its statistics.
 
-#### Méthodes et Propriétés Clés
+#### Key Methods and Properties
 
 -   `__init__(name, func, schedule_type, ...)`
-    -   **Description**: Initialise une tâche. Valide la configuration et calcule la première `next_run_time`.
-    -   **Paramètres**: Contient toute la configuration d'une tâche (nom, fonction, type de planification, priorité, timeout, configuration de retry, etc.).
+    -   **Description**: Initializes a task. Validates the configuration and calculates the first `next_run_time`.
+    -   **Parameters**: Contains all the configuration of a task (name, function, scheduling type, priority, timeout, retry configuration, etc.).
 
 -   `should_run(current_time: datetime)` -> `bool`
-    -   **Description**: Méthode cruciale appelée par la boucle principale du scheduler. Détermine si la tâche doit s'exécuter maintenant en comparant `current_time` à `self.next_run_time`.
+    -   **Description**: Crucial method called by the main scheduler loop. Determines if the task should run now by comparing `current_time` to `self.next_run_time`.
 
 -   `execute()` -> `TaskExecution`
-    -   **Description**: Point d'entrée pour l'exécution de la tâche. Gère la logique de `timeout` et de `retry` (`_execute_with_retry`), appelle la fonction cible, et met à jour les statistiques.
-    -   **Retourne**: Un objet `TaskExecution` contenant tous les détails de cette exécution spécifique.
+    -   **Description**: Entry point for task execution. Manages `timeout` and `retry` logic (`_execute_with_retry`), calls the target function, and updates statistics.
+    -   **Returns**: A `TaskExecution` object containing all the details of this specific execution.
 
 -   `cancel()`, `pause()`, `resume()`
-    -   **Description**: Méthodes pour contrôler l'état de la tâche. `pause()` désactive la tâche, `resume()` la réactive, et `cancel()` la désactive de manière permanente.
+    -   **Description**: Methods to control the task's state. `pause()` disables the task, `resume()` reactivates it, and `cancel()` permanently disables it.
 
 -   `to_dict()` -> `dict`
-    -   **Description**: Sérialise l'état complet de la tâche (configuration, état, statistiques) en un dictionnaire.
+    -   **Description**: Serializes the complete state of the task (configuration, state, statistics) into a dictionary.
 
--   `is_running: bool` (Propriété)
-    -   **Description**: Retourne `True` si la tâche est actuellement en cours d'exécution.
+-   `is_running: bool` (Property)
+    -   **Description**: Returns `True` if the task is currently running.
 
-### Dataclasses de Support
+### Support Dataclasses
 
--   **`TaskStatus(Enum)`**: Définit les états possibles d'une *exécution* de tâche (`PENDING`, `RUNNING`, `SUCCESS`, `FAILED`, `TIMEOUT`, `CANCELLED`).
--   **`TaskExecution`**: Stocke les informations d'une seule exécution : heures de début/fin, durée, statut, résultat, erreur, etc. C'est le "reçu" d'une exécution.
--   **`TaskStats`**: Agrège les statistiques de toutes les exécutions d'une tâche : nombre total, taux de succès, durées min/max/moyenne, etc.
+-   **`TaskStatus(Enum)`**: Defines the possible states of a task *execution* (`PENDING`, `RUNNING`, `SUCCESS`, `FAILED`, `TIMEOUT`, `CANCELLED`).
+-   **`TaskExecution`**: Stores information about a single execution: start/end times, duration, status, result, error, etc. It is the "receipt" of an execution.
+-   **`TaskStats`**: Aggregates statistics from all executions of a task: total number, success rate, min/max/average durations, etc.
 
 ---
 
-## 3. Module `triggers.py` - Le Mécanisme de Planification
+## 3. `triggers.py` Module - The Scheduling Mechanism
 
-Ce module fournit les classes (triggers) qui calculent la prochaine date d'exécution d'une tâche.
+This module provides the classes (triggers) that calculate the next execution time of a task.
 
-### Classe `BaseTrigger`
-Classe de base abstraite qui définit l'interface pour tous les triggers.
+### `BaseTrigger` Class
+Abstract base class that defines the interface for all triggers.
 
 -   `get_next_run_time(last_run: Optional[datetime])` -> `Optional[datetime]`
-    -   **Description**: Méthode abstraite que chaque trigger doit implémenter. Calcule et retourne la prochaine date d'exécution en se basant sur la dernière.
+    -   **Description**: Abstract method that each trigger must implement. Calculates and returns the next execution time based on the last one.
 
-### Implémentations des Triggers
+### Trigger Implementations
 
-Chaque classe hérite de `BaseTrigger` et implémente `get_next_run_time` avec sa propre logique :
--   **`IntervalTrigger`**: Pour des intervalles réguliers (ex: toutes les 30 secondes).
--   **`CronTrigger`**: Pour des expressions cron (ex: `"0 9 * * *"`).
--   **`DailyTrigger`**: Pour une heure fixe chaque jour (ex: `"14:30"`).
--   **`WeeklyTrigger`**: Pour un jour de la semaine et une heure fixes (ex: `(0, "09:00")` pour Lundi à 9h).
--   **`OnceTrigger`**: Pour une exécution unique à une date/heure précise.
--   **`StartupTrigger`**: Pour une exécution au démarrage du scheduler.
--   **`ShutdownTrigger`**: Pour une exécution à l'arrêt du scheduler.
--   **`MonthlyTrigger`**: Pour un jour du mois et une heure fixes.
+Each class inherits from `BaseTrigger` and implements `get_next_run_time` with its own logic:
+-   **`IntervalTrigger`**: For regular intervals (e.g., every 30 seconds).
+-   **`CronTrigger`**: For cron expressions (e.g., `"0 9 * * *"`).
+-   **`DailyTrigger`**: For a fixed time each day (e.g., `"14:30"`).
+-   **`WeeklyTrigger`**: For a fixed day of the week and time (e.g., `(0, "09:00")` for Monday at 9am).
+-   **`OnceTrigger`**: For a single execution at a specific date/time.
+-   **`StartupTrigger`**: For an execution at scheduler startup.
+-   **`ShutdownTrigger`**: For an execution at scheduler shutdown.
+-   **`MonthlyTrigger`**: For a fixed day of the month and time.
 
-### Classe `TriggerFactory`
+### `TriggerFactory` Class
 
 -   `create_trigger(schedule_type: ScheduleType, schedule_value: any)` -> `BaseTrigger`
-    -   **Description**: Méthode statique qui reçoit un type de planification et sa valeur, et retourne l'instance du trigger concret correspondant. C'est le point central pour la création des triggers.
+    -   **Description**: Static method that receives a schedule type and its value, and returns the corresponding concrete trigger instance. This is the central point for creating triggers.
 
 ---
 
-## 4. Module `executors.py` - Le Moteur d'Exécution
+## 4. `executors.py` Module - The Execution Engine
 
-Ce module fournit les classes (exécuteurs) qui gèrent *comment* une tâche est exécutée (threading, async, etc.).
+This module provides the classes (executors) that manage *how* a task is executed (threading, async, etc.).
 
-### Classe `BaseExecutor`
-Classe de base abstraite qui définit l'interface pour toutes les stratégies d'exécution.
+### `BaseExecutor` Class
+Abstract base class that defines the interface for all execution strategies.
 
 -   `submit_task(task: Task, priority: Priority)` -> `str`
-    -   **Description**: Soumet une tâche pour exécution. La tâche est généralement placée dans une file d'attente interne.
+    -   **Description**: Submits a task for execution. The task is usually placed in an internal queue.
 -   `start()` / `stop()`
-    -   **Description**: Gèrent le cycle de vie du pool de workers de l'exécuteur.
+    -   **Description**: Manage the lifecycle of the executor's worker pool.
 
-### Implémentations des Exécuteurs
+### Executor Implementations
 
--   **`ThreadExecutor`**: Utilise un `concurrent.futures.ThreadPoolExecutor`. Idéal pour les tâches I/O-bound. **C'est l'exécuteur par défaut.**
--   **`AsyncExecutor`**: Utilise `asyncio` et un `asyncio.Semaphore` pour exécuter des tâches `async` de manière native et concurrente.
--   **`ImmediateExecutor`**: Exécute les tâches immédiatement dans le thread appelant. Principalement pour les tests et le débogage.
+-   **`ThreadExecutor`**: Uses a `concurrent.futures.ThreadPoolExecutor`. Ideal for I/O-bound tasks. **This is the default executor.**
+-   **`AsyncExecutor`**: Uses `asyncio` and an `asyncio.Semaphore` to run `async` tasks natively and concurrently.
+-   **`ImmediateExecutor`**: Executes tasks immediately in the calling thread. Mainly for testing and debugging.
 
-### Classe `ExecutorManager`
-Gère une collection de plusieurs exécuteurs, permettant des stratégies d'exécution complexes.
+### `ExecutorManager` Class
+Manages a collection of multiple executors, allowing for complex execution strategies.
 
 -   `add_executor(name: str, executor: BaseExecutor, is_default: bool = False)`
-    -   **Description**: Enregistre une nouvelle instance d'exécuteur sous un nom donné.
+    -   **Description**: Registers a new executor instance under a given name.
 -   `route_task(task_name: str, executor_name: str)`
-    -   **Description**: Crée une règle pour qu'une tâche spécifique soit toujours envoyée à un exécuteur spécifique, au lieu de celui par défaut.
+    -   **Description**: Creates a rule so that a specific task is always sent to a specific executor, instead of the default one.
 -   `submit_task(task: Task)` -> `str`
-    -   **Description**: Reçoit une tâche du scheduler, détermine quel exécuteur doit la gérer (en fonction des règles de routage ou de l'exécuteur par défaut), et la lui transmet.
+    -   **Description**: Receives a task from the scheduler, determines which executor should handle it (based on routing rules or the default executor), and forwards it.
 
-### Dataclasses de Support
+### Support Dataclasses
 
--   **`ExecutionRequest`**: Objet interne qui encapsule une `Task` et sa `Priority` pour être placé dans la `PriorityQueue` des exécuteurs.
--   **`ExecutorStats`**: Stocke les statistiques d'un exécuteur (tâches actives, taille de la file d'attente, nombre total d'exécutions, etc.).
+-   **`ExecutionRequest`**: Internal object that encapsulates a `Task` and its `Priority` to be placed in the executors' `PriorityQueue`.
+-   **`ExecutorStats`**: Stores the statistics of an executor (active tasks, queue size, total number of executions, etc.).

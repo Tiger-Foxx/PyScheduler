@@ -1,23 +1,23 @@
-# PyScheduler - Utilitaires
+# PyScheduler - Utilities
 
-Ce module contient tous les utilitaires de base utilisés dans PyScheduler. Ces outils assurent la cohérence, la validation et la robustesse de l'ensemble du système.
+This module contains all the basic utilities used in PyScheduler. These tools ensure consistency, validation, and robustness throughout the entire system.
 
-## Table des matières
+## Table of Contents
 
 - [Exceptions](#exceptions)
 - [Logger](#logger)
 - [Helpers](#helpers)
-- [Exemples d'utilisation](#exemples-dutilisation)
+- [Usage Examples](#usage-examples)
 
 ---
 
 ## Exceptions
 
-Module : `pyscheduler.utils.exceptions`
+Module: `pyscheduler.utils.exceptions`
 
-Hiérarchie d'exceptions personnalisées avec contexte enrichi.
+A hierarchy of custom exceptions with enriched context.
 
-### Classes principales
+### Main Classes
 
 #### `PySchedulerError` (Base)
 ```python
@@ -25,58 +25,58 @@ class PySchedulerError(Exception):
     def __init__(self, message: str, details: dict = None)
 ```
 
-Exception de base avec support de détails contextuels.
+Base exception with support for contextual details.
 
-**Exemple :**
+**Example:**
 ```python
-raise PySchedulerError("Erreur de traitement", {"task": "backup", "attempt": 3})
+raise PySchedulerError("Processing error", {"task": "backup", "attempt": 3})
 ```
 
-#### Exceptions spécialisées
+#### Specialized Exceptions
 
 | Exception | Description | Usage |
-|-----------|-------------|-------|
-| `TaskError` | Erreurs liées aux tâches | Tâche invalide, non trouvée |
-| `SchedulingError` | Erreurs de planification | Expression cron invalide |
-| `ConfigurationError` | Erreurs de configuration | Fichier YAML incorrect |
-| `ExecutionError` | Erreurs d'exécution | Timeout, échec de tâche |
-| `ValidationError` | Erreurs de validation | Paramètres invalides |
+|---|---|---|
+| `TaskError` | Errors related to tasks | Invalid task, not found |
+| `SchedulingError` | Scheduling errors | Invalid cron expression |
+| `ConfigurationError` | Configuration errors | Incorrect YAML file |
+| `ExecutionError` | Execution errors | Timeout, task failure |
+| `ValidationError` | Validation errors | Invalid parameters |
 
-#### Exceptions spécifiques
+#### Specific Exceptions
 
-| Exception | Paramètres | Description |
-|-----------|------------|-------------|
-| `SchedulerNotRunningError` | `operation: str` | Scheduler non démarré |
-| `TaskNotFoundError` | `task_name: str` | Tâche introuvable |
-| `DuplicateTaskError` | `task_name: str` | Tâche déjà existante |
-| `InvalidScheduleError` | `schedule_type, schedule_value` | Planification invalide |
-| `TaskTimeoutError` | `task_name, timeout` | Dépassement de timeout |
-| `MaxRetriesExceededError` | `task_name, max_retries, last_error` | Échec après toutes les tentatives |
+| Exception | Parameters | Description |
+|---|---|---|
+| `SchedulerNotRunningError` | `operation: str` | Scheduler not started |
+| `TaskNotFoundError` | `task_name: str` | Task not found |
+| `DuplicateTaskError` | `task_name: str` | Task already exists |
+| `InvalidScheduleError` | `schedule_type, schedule_value` | Invalid schedule |
+| `TaskTimeoutError` | `task_name, timeout` | Timeout exceeded |
+| `MaxRetriesExceededError` | `task_name, max_retries, last_error` | Failed after all attempts |
 
-**Exemples :**
+**Examples:**
 ```python
-# Exception simple
+# Simple exception
 raise TaskNotFoundError("backup_task")
 
-# Exception avec contexte
+# Exception with context
 raise InvalidScheduleError("cron", "invalid expression")
 
-# Capture avec détails
+# Capture with details
 try:
     # code...
 except TaskTimeoutError as e:
-    print(f"Tâche {e.task_name} timeout après {e.timeout}s")
+    print(f"Task {e.task_name} timed out after {e.timeout}s")
 ```
 
 ---
 
 ## Logger
 
-Module : `pyscheduler.utils.logger`
+Module: `pyscheduler.utils.logger`
 
-Système de logging flexible avec support console, fichier et JSON.
+A flexible logging system with console, file, and JSON support.
 
-### Classes principales
+### Main Classes
 
 #### `PySchedulerLogger`
 ```python
@@ -91,68 +91,68 @@ class PySchedulerLogger:
     )
 ```
 
-Logger principal avec configuration flexible.
+Main logger with flexible configuration.
 
-### Méthodes de logging
+### Logging Methods
 
-| Méthode | Description | Exemple |
-|---------|-------------|---------|
-| `debug(message, **kwargs)` | Log niveau DEBUG | `logger.debug("Détail", task="test")` |
-| `info(message, **kwargs)` | Log niveau INFO | `logger.info("Démarrage", port=8080)` |
-| `warning(message, **kwargs)` | Log niveau WARNING | `logger.warning("Attention", retry=3)` |
-| `error(message, **kwargs)` | Log niveau ERROR | `logger.error("Échec", error="timeout")` |
-| `critical(message, **kwargs)` | Log niveau CRITICAL | `logger.critical("Arrêt", reason="fatal")` |
+| Method | Description | Example |
+|---|---|---|
+| `debug(message, **kwargs)` | DEBUG level log | `logger.debug("Detail", task="test")` |
+| `info(message, **kwargs)` | INFO level log | `logger.info("Starting", port=8080)` |
+| `warning(message, **kwargs)` | WARNING level log | `logger.warning("Attention", retry=3)` |
+| `error(message, **kwargs)` | ERROR level log | `logger.error("Failure", error="timeout")` |
+| `critical(message, **kwargs)` | CRITICAL level log | `logger.critical("Stopping", reason="fatal")` |
 
-### Méthodes spécialisées
+### Specialized Methods
 
-| Méthode | Description | Paramètres |
-|---------|-------------|------------|
-| `task_started(task_name, **kwargs)` | Tâche démarrée | nom de tâche + contexte |
-| `task_completed(task_name, duration, **kwargs)` | Tâche terminée | nom, durée + contexte |
-| `task_failed(task_name, error, **kwargs)` | Tâche échouée | nom, erreur + contexte |
-| `scheduler_started()` | Scheduler démarré | aucun |
-| `scheduler_stopped()` | Scheduler arrêté | aucun |
+| Method | Description | Parameters |
+|---|---|---|
+| `task_started(task_name, **kwargs)` | Task started | task name + context |
+| `task_completed(task_name, duration, **kwargs)` | Task completed | name, duration + context |
+| `task_failed(task_name, error, **kwargs)` | Task failed | name, error + context |
+| `scheduler_started()` | Scheduler started | none |
+| `scheduler_stopped()` | Scheduler stopped | none |
 
-### Fonctions utilitaires
+### Utility Functions
 
-| Fonction | Retour | Description |
-|----------|--------|-------------|
-| `get_logger(...)` | `PySchedulerLogger` | Crée un logger |
-| `setup_default_logger(...)` | `None` | Configure le logger par défaut |
-| `get_default_logger()` | `PySchedulerLogger` | Obtient le logger par défaut |
+| Function | Return | Description |
+|---|---|---|
+| `get_logger(...)` | `PySchedulerLogger` | Creates a logger |
+| `setup_default_logger(...)` | `None` | Configures the default logger |
+| `get_default_logger()` | `PySchedulerLogger` | Gets the default logger |
 
-**Exemples :**
+**Examples:**
 ```python
-# Logger simple
+# Simple logger
 from pyscheduler.utils import get_logger
-logger = get_logger("MonApp", level="DEBUG")
-logger.info("Application démarrée")
+logger = get_logger("MyApp", level="DEBUG")
+logger.info("Application started")
 
-# Logger avec fichier
+# Logger with file
 logger = get_logger(
-    "MonApp", 
+    "MyApp", 
     log_file="app.log",
     json_format=True
 )
 
-# Logger par défaut
+# Default logger
 from pyscheduler.utils import setup_default_logger, get_default_logger
 setup_default_logger(level="INFO", log_file="scheduler.log")
 logger = get_default_logger()
 
-# Logging avec contexte
+# Logging with context
 logger.task_started("backup", database="users", size="1.2GB")
 logger.task_completed("backup", 45.2, records=15000)
 logger.task_failed("sync", "Connection timeout", host="api.example.com")
 ```
 
-**Format JSON :**
+**JSON Format:**
 ```json
 {
   "timestamp": "2025-08-21T12:09:33.123456",
   "level": "INFO",
   "logger": "PyScheduler",
-  "message": "Tâche 'backup' terminée avec succès en 45.20s",
+  "message": "Task 'backup' completed successfully in 45.20s",
   "task_name": "backup",
   "duration": 45.2,
   "status": "success"
@@ -163,104 +163,104 @@ logger.task_failed("sync", "Connection timeout", host="api.example.com")
 
 ## Helpers
 
-Module : `pyscheduler.utils.helpers`
+Module: `pyscheduler.utils.helpers`
 
-Fonctions utilitaires pour validation, parsing, import et manipulation de données.
+Utility functions for validation, parsing, importing, and data manipulation.
 
 ### Validation
 
-| Fonction | Paramètres | Retour | Description |
-|----------|------------|---------|-------------|
-| `validate_cron_expression(cron_expr)` | `str` | `bool` | Valide expression cron |
-| `validate_time_string(time_str)` | `str` | `bool` | Valide format HH:MM |
+| Function | Parameters | Return | Description |
+|---|---|---|---|
+| `validate_cron_expression(cron_expr)` | `str` | `bool` | Validates cron expression |
+| `validate_time_string(time_str)` | `str` | `bool` | Validates HH:MM format |
 
-**Exemples :**
+**Examples:**
 ```python
 from pyscheduler.utils import validate_cron_expression, validate_time_string
 
-# Validation cron
+# Cron validation
 validate_cron_expression("0 9 * * 1-5")  # ✅ True
 validate_cron_expression("invalid")      # ❌ ValidationError
 
-# Validation time
+# Time validation
 validate_time_string("09:30")  # ✅ True  
 validate_time_string("25:00")  # ❌ ValidationError
 ```
 
-### Parsing et conversion
+### Parsing and Conversion
 
-| Fonction | Paramètres | Retour | Description |
-|----------|------------|---------|-------------|
-| `parse_duration(duration)` | `Union[str, int, float]` | `float` | Parse en secondes |
-| `ensure_datetime(value)` | `Union[str, datetime]` | `datetime` | Convertit en datetime |
-| `format_duration(seconds)` | `float` | `str` | Formate durée lisible |
+| Function | Parameters | Return | Description |
+|---|---|---|---|
+| `parse_duration(duration)` | `Union[str, int, float]` | `float` | Parses to seconds |
+| `ensure_datetime(value)` | `Union[str, datetime]` | `datetime` | Converts to datetime |
+| `format_duration(seconds)` | `float` | `str` | Formats readable duration |
 
-**Exemples :**
+**Examples:**
 ```python
 from pyscheduler.utils import parse_duration, ensure_datetime, format_duration
 
-# Parse durée
+# Parse duration
 parse_duration(60)        # 60.0
 parse_duration("5m")      # 300.0
 parse_duration("2h30m")   # 9000.0
 parse_duration("1d")      # 86400.0
 
-# Conversion datetime
+# Datetime conversion
 ensure_datetime("2025-08-21 12:00:00")  # datetime object
 ensure_datetime("2025-08-21")           # datetime object
 
-# Format durée
+# Format duration
 format_duration(90)      # "1m 30s"
 format_duration(3661)    # "1h 1m 1s"
-format_duration(86401)   # "1j 1s"
+format_duration(86401)   # "1d 1s"
 ```
 
-### Import et fonctions
+### Import and Functions
 
-| Fonction | Paramètres | Retour | Description |
-|----------|------------|---------|-------------|
-| `import_function(module_path, function_name)` | `str, str` | `Callable` | Import dynamique |
-| `safe_call(func, *args, **kwargs)` | `Callable, ...` | `Tuple[bool, Any, str]` | Appel sécurisé |
-| `get_function_info(func)` | `Callable` | `Dict` | Infos sur fonction |
+| Function | Parameters | Return | Description |
+|---|---|---|---|
+| `import_function(module_path, function_name)` | `str, str` | `Callable` | Dynamic import |
+| `safe_call(func, *args, **kwargs)` | `Callable, ...` | `Tuple[bool, Any, str]` | Safe call |
+| `get_function_info(func)` | `Callable` | `Dict` | Info about function |
 
-**Exemples :**
+**Examples:**
 ```python
 from pyscheduler.utils import import_function, safe_call, get_function_info
 
-# Import dynamique
+# Dynamic import
 func = import_function("math", "sqrt")
 result = func(16)  # 4.0
 
-# Appel sécurisé
+# Safe call
 success, result, error = safe_call(func, 16)
 if success:
-    print(f"Résultat: {result}")
+    print(f"Result: {result}")
 else:
-    print(f"Erreur: {error}")
+    print(f"Error: {error}")
 
-# Infos fonction
+# Function info
 info = get_function_info(func)
 print(info['name'])      # "sqrt"
 print(info['module'])    # "math"
 print(info['is_async'])  # False
 ```
 
-### Utilitaires divers
+### Miscellaneous Utilities
 
-| Fonction | Paramètres | Retour | Description |
-|----------|------------|---------|-------------|
-| `create_safe_filename(name)` | `str` | `str` | Nom fichier sécurisé |
-| `deep_merge_dicts(dict1, dict2)` | `dict, dict` | `dict` | Fusion récursive |
+| Function | Parameters | Return | Description |
+|---|---|---|---|
+| `create_safe_filename(name)` | `str` | `str` | Safe filename |
+| `deep_merge_dicts(dict1, dict2)` | `dict, dict` | `dict` | Recursive merge |
 
-**Exemples :**
+**Examples:**
 ```python
 from pyscheduler.utils import create_safe_filename, deep_merge_dicts
 
-# Nom fichier sécurisé
+# Safe filename
 create_safe_filename("Task: Backup/Restore")  # "Task_Backup_Restore"
 create_safe_filename("file<>name")            # "file__name"
 
-# Fusion dictionnaires
+# Merge dictionaries
 dict1 = {"a": 1, "b": {"x": 1}}
 dict2 = {"b": {"y": 2}, "c": 3}
 result = deep_merge_dicts(dict1, dict2)
@@ -269,9 +269,9 @@ result = deep_merge_dicts(dict1, dict2)
 
 ---
 
-## Exemples d'utilisation
+## Usage Examples
 
-### Logger complet
+### Complete Logger
 
 ```python
 from pyscheduler.utils import setup_default_logger, get_default_logger
@@ -285,16 +285,16 @@ setup_default_logger(
 
 logger = get_default_logger()
 
-# Utilisation dans une tâche
+# Usage in a task
 def backup_task():
     logger.task_started("backup", database="users")
     
     try:
-        # Simulation travail
+        # Simulate work
         import time
         time.sleep(2)
         
-        logger.info("Sauvegarde en cours", progress="50%")
+        logger.info("Backup in progress", progress="50%")
         time.sleep(2)
         
         logger.task_completed("backup", 4.0, size="1.2GB")
@@ -304,7 +304,7 @@ def backup_task():
         raise
 ```
 
-### Validation et parsing
+### Validation and Parsing
 
 ```python
 from pyscheduler.utils import (
@@ -313,7 +313,7 @@ from pyscheduler.utils import (
 )
 
 def parse_schedule_config(schedule_data):
-    """Parse et valide une configuration de planification"""
+    """Parses and validates a schedule configuration"""
     
     schedule_type = schedule_data.get("type")
     schedule_value = schedule_data.get("value")
@@ -332,77 +332,77 @@ def parse_schedule_config(schedule_data):
             return schedule_type, dt
             
         else:
-            raise ValidationError(f"Type de planification inconnu: {schedule_type}")
+            raise ValidationError(f"Unknown schedule type: {schedule_type}")
             
     except ValidationError as e:
-        logger.error(f"Configuration invalide: {e}")
+        logger.error(f"Invalid configuration: {e}")
         raise
 ```
 
-### Import et exécution sécurisée
+### Secure Import and Execution
 
 ```python
 from pyscheduler.utils import import_function, safe_call, get_function_info
 
 def execute_task_function(module_name, function_name, *args, **kwargs):
-    """Exécute une fonction de tâche de manière sécurisée"""
+    """Executes a task function securely"""
     
     try:
-        # Import de la fonction
+        # Import the function
         func = import_function(module_name, function_name)
         
-        # Obtenir des infos sur la fonction
+        # Get info about the function
         info = get_function_info(func)
-        logger.debug(f"Exécution de {info['name']}", module=info['module'])
+        logger.debug(f"Executing {info['name']}", module=info['module'])
         
-        # Exécution sécurisée
+        # Secure execution
         success, result, error = safe_call(func, *args, **kwargs)
         
         if success:
-            logger.info(f"Fonction exécutée avec succès", result=str(result)[:100])
+            logger.info(f"Function executed successfully", result=str(result)[:100])
             return result
         else:
-            logger.error(f"Erreur d'exécution: {error}")
+            logger.error(f"Execution error: {error}")
             raise RuntimeError(error)
             
     except Exception as e:
-        logger.error(f"Échec import/exécution: {e}")
+        logger.error(f"Import/execution failed: {e}")
         raise
 ```
 
-### Gestion de configuration avancée
+### Advanced Configuration Management
 
 ```python
 from pyscheduler.utils import deep_merge_dicts, create_safe_filename
 import json
 
 def merge_configurations(base_config, override_config):
-    """Fusionne deux configurations"""
+    """Merges two configurations"""
     
-    # Fusion récursive
+    # Recursive merge
     merged = deep_merge_dicts(base_config, override_config)
     
-    # Création d'un nom de fichier sécurisé pour sauvegarde
+    # Create a safe filename for backup
     config_name = f"merged_config_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
     safe_filename = create_safe_filename(config_name) + ".json"
     
-    # Sauvegarde
+    # Save
     with open(safe_filename, 'w') as f:
         json.dump(merged, f, indent=2, default=str)
     
-    logger.info(f"Configuration fusionnée sauvée: {safe_filename}")
+    logger.info(f"Merged configuration saved: {safe_filename}")
     return merged
 ```
 
 ---
 
-## Intégration avec les autres modules
+## Integration with Other Modules
 
-Les utilitaires sont utilisés massivement dans tout PyScheduler :
+The utilities are used extensively throughout PyScheduler:
 
-### Dans la configuration
+### In Configuration
 ```python
-# config/manager.py utilise :
+# config/manager.py uses:
 from ..utils import (
     ConfigurationError, ValidationError,
     validate_cron_expression, parse_duration,
@@ -410,49 +410,67 @@ from ..utils import (
 )
 ```
 
-### Dans le core
+### In Core
 ```python
-# core/scheduler.py utilise :
+# core/scheduler.py uses:
 from ..utils import (
     get_default_logger, PySchedulerError,
     safe_call, format_duration
 )
 ```
 
-### Dans CLI
+### In CLI
 ```python
-# cli/main.py utilise :
+# cli/main.py uses:
 from ..utils import (
     setup_default_logger, ValidationError,
     create_safe_filename
 )
 ```
 
-Cette architecture évite toute duplication de code et assure la cohérence à travers tout le projet.
+This architecture avoids code duplication and ensures consistency across the entire project.
 
 ---
 
-## Notes de performance
+## Performance Notes
 
-- **Logging :** Le logger utilise des handlers Python standard, optimisés pour la performance
-- **Validation :** Les validations sont mises en cache quand possible  
-- **Import dynamique :** Les modules importés sont mis en cache par Python
-- **Parsing :** Les regex de parsing sont compilées une seule fois
+- **Logging:** The logger uses standard Python handlers, optimized for performance.
+- **Validation:** Validations are cached when possible.
+- **Dynamic Import:** Imported modules are cached by Python.
+- **Parsing:** Parsing regexes are compiled only once.
 
-## Extensibilité
+## Extensibility
 
-Les utilitaires sont conçus pour être facilement étendus :
+The utilities are designed to be easily extended:
 
 ```python
-# Ajout d'une nouvelle exception
+# Add a new exception
 class CustomTaskError(TaskError):
     def __init__(self, task_name, custom_info):
-        super().__init__(f"Erreur personnalisée pour {task_name}")
+        super().__init__(f"Custom error for {task_name}")
         self.custom_info = custom_info
 
-# Ajout d'un validator personnalisé  
+# Add a custom validator  
 def validate_custom_format(value):
     if not value.startswith("CUSTOM_"):
-        raise ValidationError("Doit commencer par CUSTOM_")
+        raise ValidationError("Must start with CUSTOM_")
     return True
 ```
+
+---
+
+## Conclusion
+
+The `utils` module is the foundation of PyScheduler. It provides the essential tools for robustness, validation, logging, and data manipulation, allowing other modules to focus on their business logic.
+
+---
+
+## Contact
+
+For any questions, please open an issue on the GitHub repository.
+
+---
+
+## License
+
+This project is licensed under the MIT License. See the `LICENSE` file for more details.

@@ -1,49 +1,43 @@
 # PyScheduler - Package Distribution Files
 
-# Core files
 include README.md
 include LICENSE
 include CHANGELOG.md
 include requirements.txt
 include requirements-dev.txt
-
-# Configuration
 include pyproject.toml
-include setup.py
-include MANIFEST.in
 
 # Documentation
-recursive-include docs *.md *.rst *.txt
-graft docs
+recursive-include docs *.md
 prune docs/_build
 
-# Examples (will be available after pip install)
+# Examples
 recursive-include examples *.py *.yaml *.yml *.md
 
-# Tests (for development)
+# Tests
 recursive-include tests *.py
 
-# Package data
+# Package source
 recursive-include pyscheduler *.py
-recursive-include pyscheduler *.md
 
-# Exclude development files
+# EXCLURE EXPLICITEMENT l'environnement virtuel
+global-exclude *_env/*
+global-exclude env/*
+global-exclude venv/*
+global-exclude .venv/*
+prune pyscheduler_env
+prune *_env
+prune env
+prune venv
+prune .venv
+
+# Autres exclusions
 global-exclude *.pyc
 global-exclude *.pyo
-global-exclude *.pyd
 global-exclude __pycache__
 global-exclude .git*
 global-exclude .DS_Store
 global-exclude *.log
-global-exclude *.pid
-global-exclude *.sock
-global-exclude .pytest_cache
-global-exclude .coverage
-global-exclude .mypy_cache
-global-exclude .tox
-global-exclude .venv
-global-exclude venv
-global-exclude env
 prune build
 prune dist
 prune *.egg-info
