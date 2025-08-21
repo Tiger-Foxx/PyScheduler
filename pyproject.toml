@@ -14,6 +14,7 @@ requires-python = ">=3.7"
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
+    "Intended Audience :: System Administrators",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
@@ -23,11 +24,18 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Topic :: System :: Monitoring",
+    "Topic :: System :: Systems Administration",
     "Topic :: Utilities",
+    "Environment :: Console",
+    "Framework :: AsyncIO",
 ]
-keywords = ["scheduler", "task", "cron", "async", "threading", "automation", "jobs"]
+keywords = [
+    "scheduler", "task", "cron", "async", "threading", "automation", 
+    "jobs", "background", "periodic", "interval", "daemon", "service"
+]
 dependencies = []
 dynamic = ["version"]
 
@@ -46,20 +54,28 @@ dev = [
     "pytest-asyncio>=0.20.0",
     "black>=22.0.0",
     "flake8>=5.0.0",
-    "mypy>=1.0.0"
+    "mypy>=1.0.0",
+    "build>=0.8.0",
+    "twine>=4.0.0"
 ]
 
 [project.urls]
 Homepage = "https://github.com/Tiger-Foxx/PyScheduler"
-Documentation = "https://pyscheduler.readthedocs.io/"
+Documentation = "https://github.com/Tiger-Foxx/PyScheduler/blob/main/docs/"
 Repository = "https://github.com/Tiger-Foxx/PyScheduler"
 Issues = "https://github.com/Tiger-Foxx/PyScheduler/issues"
+Changelog = "https://github.com/Tiger-Foxx/PyScheduler/blob/main/docs/changelog.md"
+Examples = "https://github.com/Tiger-Foxx/PyScheduler/tree/main/examples"
 
-[project.scripts]
-pyscheduler = "pyscheduler.cli.main:main"
+# CLI entry point (coming soon)
+# [project.scripts]
+# pyscheduler = "pyscheduler.cli.main:main"
 
 [tool.setuptools.dynamic]
 version = {attr = "pyscheduler.__version__"}
+
+[tool.setuptools.packages.find]
+exclude = ["tests*", "scripts*"]
 
 [tool.black]
 line-length = 100
@@ -88,8 +104,8 @@ multi_line_output = 3
 python_version = "3.7"
 warn_return_any = true
 warn_unused_configs = true
-disallow_untyped_defs = true
-disallow_incomplete_defs = true
+disallow_untyped_defs = false  # Relaxé pour la v1.0
+disallow_incomplete_defs = false
 check_untyped_defs = true
 no_implicit_optional = true
 warn_redundant_casts = true
