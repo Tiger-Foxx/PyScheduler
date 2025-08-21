@@ -212,12 +212,13 @@ class Task:
         self.stats = TaskStats()
         self._execution_history: List[TaskExecution] = []
         
+        # Logger
+        self.logger = get_default_logger()
+        
         # Planification
         self.next_run_time: Optional[datetime] = None
         self._calculate_next_run()
         
-        # Logger
-        self.logger = get_default_logger()
         
         # Informations sur la fonction
         self._function_info = get_function_info(func)
