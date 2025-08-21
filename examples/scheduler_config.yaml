@@ -1,0 +1,15 @@
+﻿# Exemple de configuration PyScheduler
+tasks:
+  - name: "example_task"
+    module: "examples.basic_usage"
+    function: "sample_function"
+    schedule:
+      type: "interval"
+      value: 300  # Toutes les 5 minutes
+    enabled: true
+    
+global_settings:
+  timezone: "Europe/Paris"
+  log_file: "scheduler.log"
+  log_level: "INFO"
+  max_workers: 4
