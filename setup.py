@@ -37,7 +37,7 @@ def get_requirements(filename):
     return []
 
 setup(
-    name="pyscheduler",
+    name="pyscheduler-fox",
     version=get_version(),
     author="Fox",
     author_email="donfackarthur750@gmail.com",

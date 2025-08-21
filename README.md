@@ -1,4 +1,4 @@
-# PyScheduler
+# PyScheduler-fox
 
 **The simplest and most powerful Python scheduler**
 
