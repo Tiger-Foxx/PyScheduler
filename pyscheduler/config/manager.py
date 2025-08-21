@@ -33,6 +33,7 @@ class ScheduleType(Enum):
     ONCE = "once"
     DAILY = "daily"
     WEEKLY = "weekly"
+    MONTHLY = "monthly"  # <-- AJOUTÉ
     STARTUP = "startup"
     SHUTDOWN = "shutdown"
 
@@ -134,6 +135,18 @@ class TaskConfig:
             day, time = self.schedule_value
             if not isinstance(day, int) or not (0 <= day <= 6):
                 raise ValidationError("Jour de la semaine doit être 0-6")
+            if not isinstance(time, str):
+                raise ValidationError("Heure doit être une chaîne HH:MM")
+            validate_time_string(time)
+        
+        elif self.schedule_type == ScheduleType.MONTHLY:
+            # Doit être un tuple (jour_mois, "HH:MM")
+            if not isinstance(self.schedule_value, (list, tuple)) or len(self.schedule_value) != 2:
+                raise ValidationError("Planification mensuelle doit être [jour_mois, 'HH:MM']")
+            
+            day, time = self.schedule_value
+            if not isinstance(day, int) or not (1 <= day <= 31):
+                raise ValidationError("Jour du mois doit être 1-31")
             if not isinstance(time, str):
                 raise ValidationError("Heure doit être une chaîne HH:MM")
             validate_time_string(time)
